@@ -11,7 +11,7 @@ app.use(cors());
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173/",
+    origin: "https://rock-paper-scissors-game20.netlify.app/",
     methods: ["GET", "POST"],
   },
 });
@@ -176,5 +176,5 @@ function getResult(p1, p2) {
 }
 
 server.listen(5000, () => {
-  console.log("✅ Server running at http://localhost:5000");
+  console.log("✅ Server running at https://rock-paper-scissors-game-cpee.onrender.com");
 });
