@@ -94,15 +94,46 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("rematch", () => {
+  // Get current players in room
+  socket.on("request-players", ({ roomId }, callback) => {
+    const room = rooms.get(roomId);
+    if (room && callback) {
+      callback(room.players);
+    }
+  });
+
+  // Rematch invitation logic
+  socket.on("rematch-invite", ({ to, fromId, fromName }) => {
     const roomId = socket.data.roomId;
     const room = rooms.get(roomId);
-    if (!room) return;
+    if (!room || !to) {
+      console.log("Invalid room or target for rematch invite");
+      return;
+    }
+    
+    const targetPlayer = room.players.find(p => p.id === to);
+    if (!targetPlayer) {
+      console.log("Target player not found in room");
+      return;
+    }
 
-    room.rematchRequests.add(socket.id);
-    if (room.rematchRequests.size === 2) {
-      room.rematchRequests.clear();
+    console.log(`Sending rematch invite from ${fromName} (${fromId}) to ${to}`);
+    // Broadcast updated players list first
+    io.to(roomId).emit("update-players", { players: room.players });
+    // Then send the rematch invite
+    io.to(to).emit("rematch-invite", { fromId, fromName });
+  });
+
+  socket.on("rematch-response", ({ accept, to, name }) => {
+    const roomId = socket.data.roomId;
+    const room = rooms.get(roomId);
+    if (!room || !to) return;
+    if (accept) {
+      // Both players agreed, start rematch
       io.to(roomId).emit("rematch-start");
+    } else {
+      // Notify inviter of decline
+      io.to(to).emit("rematch-declined", { name });
     }
   });
 
